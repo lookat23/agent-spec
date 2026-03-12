@@ -1,7 +1,7 @@
 # agent-spec Integration for Codex / OpenAI Agents
 
 > This file provides Codex with the same guidance that Claude Code gets via `.claude/skills/`.
-> Two workflows: **Tool-First** (using the CLI) and **Authoring** (writing .spec files).
+> Two workflows: **Tool-First** (using the CLI) and **Authoring** (writing .spec/.spec.md files).
 
 ---
 
@@ -195,10 +195,10 @@ Chinese equivalents:
 ### Three-Layer Inheritance
 
 ```
-org.spec → project.spec → task.spec
+org.spec(.md) → project.spec(.md) → task.spec(.md)
 ```
 
-Constraints and decisions inherit downward.
+Constraints and decisions inherit downward. Both `.spec` and `.spec.md` extensions are supported; `.spec.md` is preferred for new files (enables Markdown preview in editors and GitHub).
 
 ### Conventions
 

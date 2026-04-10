@@ -677,7 +677,7 @@ footer a:hover { text-decoration: underline; }
         <span class="cmd-text">./install-skills.sh</span>
         <span class="copy-hint">click to copy</span>
       </div>
-      <div class="skills-install-note">Installs agent-spec CLI + all 3 skills into ~/.claude/skills/ with one command</div>
+      <div class="skills-install-note">Installs agent-spec CLI + all 3 skills into ~/.claude/skills/ with one command. On Windows, use the PowerShell installer.</div>
     </div>
 
     <div class="skills-grid reveal">
@@ -1124,6 +1124,8 @@ footer a:hover { text-decoration: underline; }
     <div class="install-block reveal">
       <span class="comment"># Install CLI + Skills (one command)</span><br>
       <span class="cmd">git clone https://github.com/ZhangHanDong/agent-spec && cd agent-spec && ./install-skills.sh</span><br><br>
+      <span class="comment"># Windows PowerShell</span><br>
+      <span class="cmd">git clone https://github.com/ZhangHanDong/agent-spec; cd agent-spec; powershell -ExecutionPolicy Bypass -File .\install-skills.ps1</span><br><br>
       <span class="comment"># Or install CLI only</span><br>
       <span class="cmd">cargo install agent-spec</span><br><br>
       <span class="comment"># Create a task contract</span><br>
@@ -1209,7 +1211,10 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 const skillsCopy = document.getElementById('skills-copy');
 if (skillsCopy) {
   skillsCopy.addEventListener('click', () => {
-    const cmd = './install-skills.sh';
+    const isWindows = navigator.platform.toLowerCase().includes('win');
+    const cmd = isWindows
+      ? 'powershell -ExecutionPolicy Bypass -File .\\install-skills.ps1'
+      : './install-skills.sh';
     navigator.clipboard.writeText(cmd).then(() => {
       skillsCopy.classList.add('copied');
       const hint = skillsCopy.querySelector('.copy-hint');
@@ -1220,6 +1225,11 @@ if (skillsCopy) {
       }, 2000);
     });
   });
+
+  const cmdText = skillsCopy.querySelector('.cmd-text');
+  if (cmdText && navigator.platform.toLowerCase().includes('win')) {
+    cmdText.textContent = 'powershell -ExecutionPolicy Bypass -File .\\install-skills.ps1';
+  }
 }
 
 // ── Pipeline stagger ────────────────────────────

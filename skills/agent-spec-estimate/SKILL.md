@@ -27,6 +27,12 @@ You are an expert at estimating AI agent work effort from structured Task Contra
 command -v agent-spec || cargo install agent-spec
 ```
 
+On Windows PowerShell, use:
+
+```powershell
+Get-Command agent-spec -ErrorAction SilentlyContinue; if (-not $?) { cargo install agent-spec }
+```
+
 If `agent-spec` is not installed, inform the user:
 > `agent-spec` CLI not found. Install with: `cargo install agent-spec`
 

@@ -123,6 +123,10 @@ See [`examples/rewrite-parity-contract.spec`](examples/rewrite-parity-contract.s
 ./install-skills.sh
 ```
 
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-skills.ps1
+```
+
 This installs the `agent-spec` CLI via `cargo install` (if not already present) and copies all three skills to `~/.claude/skills/`.
 
 #### Manual install for Claude Code
@@ -134,12 +138,25 @@ cp -r skills/agent-spec-authoring ~/.claude/skills/
 cp -r skills/agent-spec-estimate ~/.claude/skills/
 ```
 
+```powershell
+New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills" | Out-Null
+Copy-Item skills\agent-spec-tool-first -Destination "$HOME\.claude\skills\agent-spec-tool-first" -Recurse -Force
+Copy-Item skills\agent-spec-authoring -Destination "$HOME\.claude\skills\agent-spec-authoring" -Recurse -Force
+Copy-Item skills\agent-spec-estimate -Destination "$HOME\.claude\skills\agent-spec-estimate" -Recurse -Force
+```
+
 Or symlink for auto-updates:
 
 ```bash
 ln -s "$(pwd)/skills/agent-spec-tool-first" ~/.claude/skills/
 ln -s "$(pwd)/skills/agent-spec-authoring" ~/.claude/skills/
 ln -s "$(pwd)/skills/agent-spec-estimate" ~/.claude/skills/
+```
+
+```powershell
+New-Item -ItemType SymbolicLink -Path "$HOME\.claude\skills\agent-spec-tool-first" -Target (Resolve-Path .\skills\agent-spec-tool-first) | Out-Null
+New-Item -ItemType SymbolicLink -Path "$HOME\.claude\skills\agent-spec-authoring" -Target (Resolve-Path .\skills\agent-spec-authoring) | Out-Null
+New-Item -ItemType SymbolicLink -Path "$HOME\.claude\skills\agent-spec-estimate" -Target (Resolve-Path .\skills\agent-spec-estimate) | Out-Null
 ```
 
 #### Install for Codex
@@ -150,9 +167,17 @@ The equivalent guidance for Codex lives in [`AGENTS.md`](AGENTS.md). Copy it to 
 cp AGENTS.md /path/to/your/project/
 ```
 
+```powershell
+Copy-Item .\AGENTS.md C:\path\to\your\project\AGENTS.md
+```
+
 #### Install for Cursor
 
 Copy [`.cursorrules`](.cursorrules) to your project root.
+
+```powershell
+Copy-Item .\.cursorrules C:\path\to\your\project\.cursorrules
+```
 
 #### Workflow
 

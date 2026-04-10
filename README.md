@@ -182,9 +182,10 @@ Copy-Item .\.cursorrules C:\path\to\your\project\.cursorrules
 #### Workflow
 
 1. Use `agent-spec-tool-first` to inspect the target spec and render `agent-spec contract`.
-2. Implement code against the rendered Task Contract.
-3. Run `agent-spec lifecycle` for the task-level gate.
-4. Run `agent-spec guard` for repo-level validation when needed.
+2. Run `agent-spec plan <spec> --code . --format prompt` to generate a self-contained implementation prompt with codebase context.
+3. Implement code against the Contract + Plan.
+4. Run `agent-spec lifecycle` for the task-level gate.
+5. Run `agent-spec guard` for repo-level validation when needed.
 
 Before step 2, if the task is a rewrite, migration, or parity effort, use the tool-first workflow to review which observable behaviors are still unbound. If stdout/stderr, `--json`, `-o/--output`, local/remote, cache state, or fallback order are only described in prose, go back to authoring mode and add scenarios first.
 
@@ -197,6 +198,20 @@ cargo run -q --bin agent-spec -- contract specs/my-task.spec
 ```
 
 Use `--format json` if another tool or agent runtime needs structured output.
+
+### 2b. Generate plan context (Contract + Codebase + Task Sketch)
+
+```bash
+cargo run -q --bin agent-spec -- plan specs/my-task.spec --code .
+```
+
+`plan` outputs three blocks:
+
+- **Contract** — the full task contract with inherited constraints
+- **Codebase Context** — files in Allowed Changes paths with summaries, pub API signatures, and existing test functions
+- **Task Sketch** — scenarios grouped by dependency order (topological sort) for implementation sequencing
+
+Use `--format prompt` for a self-contained AI prompt (includes mandatory verification gate and execution protocol). Use `--format json` for machine-parseable output. Use `--depth full` to include pub API signatures in the codebase scan.
 
 ### 3. Run the full quality gate
 
@@ -377,19 +392,23 @@ For consistency, `verify` and `lifecycle` use the same precedence when `--change
 
 ## Commands
 
-- `parse`: parse `.spec` files and show the AST
-- `lint`: analyze spec quality
-- `verify`: verify code against a single spec
-- `contract`: render the Task Contract view
-- `lifecycle`: run lint + verify + report
-- `guard`: lint all specs and verify them against the current change set
-- `explain`: generate a human-readable contract review summary (for Contract Acceptance)
-- `stamp`: preview git trailers for a verified contract (`--dry-run`)
-- `resolve-ai`: merge external AI decisions into a verification report (caller mode)
-- `checkpoint`: preview VCS-aware checkpoint status
-- `install-hooks`: install git hooks for automatic checking
-- `brief`: compatibility alias for `contract`
-- `measure-determinism`: [experimental] measure contract verification variance
+| Command | Purpose |
+|---------|---------|
+| `parse` | Parse `.spec`/`.spec.md` files and show the AST |
+| `lint` | Analyze spec quality (vague verbs, missing test selectors, coverage gaps) |
+| `verify` | Verify code against a single spec |
+| `contract` | Render the Task Contract view |
+| `plan` | Generate plan context: Contract + Codebase scan + Task Sketch |
+| `lifecycle` | Run lint + verify + report (the main quality gate) |
+| `guard` | Lint all specs and verify against the current change set |
+| `explain` | Generate a human-readable contract review summary (Contract Acceptance) |
+| `stamp` | Preview git trailers for a verified contract (`--dry-run`) |
+| `resolve-ai` | Merge external AI decisions into a verification report (caller mode) |
+| `checkpoint` | Preview VCS-aware checkpoint status |
+| `graph` | Generate spec dependency graph (`--format dot` or `svg`) |
+| `install-hooks` | Install git hooks for automatic checking |
+| `measure-determinism` | [experimental] Measure contract verification variance |
+| `brief` | Compatibility alias for `contract` |
 
 ## Examples
 
@@ -416,7 +435,7 @@ agent-spec is self-bootstrapping: the project uses itself to govern its own deve
 
 ### The contribution flow
 
-Every change starts with a Task Contract. Before writing code, create a `.spec` file in `specs/` that defines what you're building — the intent, the technical decisions that are already fixed, the files you'll touch, and the BDD scenarios that define "done." Then implement against the Contract and verify with `lifecycle`.
+Every change starts with a Task Contract. Before writing code, create a `.spec.md` file in `specs/` that defines what you're building — the intent, the technical decisions that are already fixed, the files you'll touch, and the BDD scenarios that define "done." Then implement against the Contract and verify with `lifecycle`. (Legacy `.spec` files are also supported.)
 
 ```bash
 # 1. Create a task contract for your change
@@ -424,18 +443,18 @@ agent-spec init --level task --lang en --name "my-feature"
 # Edit the generated spec: fill in Intent, Decisions, Boundaries, Completion Criteria
 
 # 2. Check that the contract itself is well-written
-agent-spec lint specs/my-feature.spec --min-score 0.7
+agent-spec lint specs/my-feature.spec.md --min-score 0.7
 
 # 3. Implement your change
 
 # 4. Verify against the contract
-agent-spec lifecycle specs/my-feature.spec --code . --change-scope worktree --format json
+agent-spec lifecycle specs/my-feature.spec.md --code . --change-scope worktree --format json
 
 # 5. Run the repo-wide guard before committing
 agent-spec guard --spec-dir specs --code .
 
 # 6. Generate the PR description
-agent-spec explain specs/my-feature.spec --code . --format markdown
+agent-spec explain specs/my-feature.spec.md --code . --format markdown
 ```
 
 The `guard` pre-commit hook is installed via `agent-spec install-hooks`. It checks all specs in `specs/` against your staged changes — your commit will be blocked if any contract fails.

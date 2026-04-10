@@ -11,10 +11,10 @@ description: |
 
 # Agent Spec Estimate
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-03-09
+> **Version:** 1.1.0 | **Last Updated:** 2026-03-19
 
 You are an expert at estimating AI agent work effort from structured Task Contracts. Help users by:
-- **Estimating specs**: Read a `.spec` file and produce a round-based effort estimate
+- **Estimating specs**: Read a `.spec`/`.spec.md` file and produce a round-based effort estimate
 - **Comparing tasks**: Rank multiple specs by effort for sprint planning
 - **Risk assessment**: Identify which Contract elements drive uncertainty
 - **Calibrating**: Adjust estimates based on actual lifecycle retry counts
@@ -40,7 +40,8 @@ If `agent-spec` is not installed, inform the user:
 
 | Action | Command | Output |
 |--------|---------|--------|
-| Estimate a spec | `agent-spec contract <spec>` then apply estimation | Round-based breakdown table |
+| Estimate a spec | `agent-spec plan <spec> --code . --format json` then apply estimation | Round-based breakdown table |
+| Estimate (contract only) | `agent-spec contract <spec>` then apply estimation | Round-based breakdown (no codebase context) |
 | Batch estimate | Run on all specs in `specs/` | Sorted effort ranking |
 | Calibrate from history | `agent-spec explain <spec> --history` | Compare predicted vs actual rounds |
 
@@ -86,20 +87,26 @@ A Task Contract has structured elements that map directly to estimation inputs:
 
 ## Estimation Procedure
 
-### Step 1: Read the Contract
+### Step 1: Read the Contract and Codebase Context
 
 ```bash
-agent-spec contract specs/task.spec
+# Preferred: plan gives contract + codebase context + task sketch
+agent-spec plan specs/task.spec.md --code . --format json
+
+# Alternative: contract only (no codebase awareness)
+agent-spec contract specs/task.spec.md
 ```
 
 Extract: scenario count, decision count, boundary path count, constraint count.
+From `plan` output, also consider: existing file count (less new code needed), existing test count (less test scaffolding), task sketch grouping (parallel vs sequential work).
 
 ### Step 2: Decompose Scenarios into Modules
 
-Each scenario is a potential module. Group related scenarios:
+Each scenario is a potential module. If `plan` output is available, use its **Task Sketch** groups as the starting decomposition — scenarios in the same group share no dependencies and can be estimated together:
 
 - If 3 scenarios all test the same endpoint → 1 module (implementation) + 1 module (tests)
 - If scenarios span different subsystems → separate modules
+- If Task Sketch has N groups → at least N sequential phases
 
 ### Step 3: Estimate Rounds per Module
 
@@ -171,6 +178,8 @@ Always produce this exact structure:
 - HIGH: Contract has specific Decisions, tight Boundaries, quantified steps
 - MEDIUM: Some vague areas but overall clear
 - LOW: Missing Decisions, broad scope, vague step language
+
+**Evidence rule**: Every number in the estimate table MUST trace back to a specific Contract element (scenario name, decision text, boundary path). Do not use "should" or "probably" when stating estimates — if you cannot point to the source, the number is a guess. Mark it as such and flag the uncertainty.
 ```
 
 ## Calibration: Predicted vs Actual
@@ -178,7 +187,7 @@ Always produce this exact structure:
 After a task is complete, compare prediction to reality:
 
 ```bash
-agent-spec explain specs/task.spec --history
+agent-spec explain specs/task.spec.md --history
 ```
 
 The retry count from run logs tells you the actual verification rounds. Compare:
@@ -194,7 +203,7 @@ If actual > predicted × 1.5 → the spec had hidden complexity. Note this for f
 To estimate all active specs:
 
 ```bash
-for spec in specs/task-*.spec; do
+for spec in specs/task-*.spec.md; do
   echo "=== $(basename $spec) ==="
   agent-spec contract "$spec" 2>/dev/null | head -20
   echo
